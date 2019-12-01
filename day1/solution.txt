@@ -1,0 +1,19 @@
+>>> def get_f(x):
+...  base = int(x / 3) - 2
+...  if base < 0: return 0
+...  if base < 3: return base
+...  nb = int(base / 3) - 2
+...  while nb > 0:
+...   base += nb
+...   nb = int(nb / 3) - 2
+...  return base
+... 
+>>> get_f(100756)
+50346
+>>> fr = 0
+>>> for m in masses:
+...  fr += get_f(int(m))
+... 
+>>> fr
+5109803
+
