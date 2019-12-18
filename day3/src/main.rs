@@ -1,13 +1,13 @@
-use std::cmp::{max, min, Eq, PartialEq};
-use std::collections::{HashMap, HashSet};
+use std::cmp::{Eq, PartialEq};
+use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 struct Point {
     pub x: i32,
     pub y: i32,
-    pub steps: u32,
+    pub steps: usize,
 }
 
 impl Point {
@@ -47,31 +47,31 @@ fn parse_input(input: &[Vec<String>]) -> Vec<HashSet<Point>> {
     for wire in input {
         let mut prev_x: i32 = 0;
         let mut prev_y: i32 = 0;
-        let mut steps: u32 = 0;
+        let mut steps: usize = 0;
 
         let mut points = HashSet::<Point>::new();
         for d in wire.iter() {
             let new_y: i32;
             let new_x: i32;
             let (d, n) = d.split_at(1);
-            let n = n.parse::<i32>().unwrap();
+            let n = n.parse::<usize>().unwrap();
             match d {
                 "D" => {
-                    new_y = prev_y - n;
-                    for y in new_y..prev_y {
-                        steps += 1;
+                    new_y = prev_y - n as i32;
+                    for (i, y) in (new_y..prev_y).enumerate() {
                         let p = Point {
                             x: prev_x,
                             y,
-                            steps,
+                            steps: steps + n - i,
                         };
                         points.insert(p);
                     }
+                    steps += n;
                     prev_y = new_y;
                 }
                 "U" => {
-                    new_y = prev_y + n;
-                    for y in prev_y..=new_y {
+                    new_y = prev_y + n as i32;
+                    for y in (prev_y + 1)..=new_y {
                         steps += 1;
                         let p = Point {
                             x: prev_x,
@@ -83,21 +83,21 @@ fn parse_input(input: &[Vec<String>]) -> Vec<HashSet<Point>> {
                     prev_y = new_y;
                 }
                 "L" => {
-                    new_x = prev_x - n;
-                    for x in new_x..prev_x {
-                        steps += 1;
+                    new_x = prev_x - n as i32;
+                    for (i, x) in (new_x..prev_x).enumerate() {
                         let p = Point {
                             x,
                             y: prev_y,
-                            steps,
+                            steps: steps + n - i,
                         };
                         points.insert(p);
                     }
+                    steps += n;
                     prev_x = new_x;
                 }
                 "R" => {
-                    new_x = prev_x + n;
-                    for x in prev_x..=new_x {
+                    new_x = prev_x + n as i32;
+                    for x in (prev_x + 1)..=new_x {
                         steps += 1;
                         let p = Point {
                             x,
@@ -124,19 +124,27 @@ fn main() {
     // TODO: generalize on number of wires
     assert!(&input.len() == &(2 as usize));
 
-    let mut intersection: HashSet<_> = input[0].intersection(&input[1]).collect();
-    let _ = intersection.remove(
-        &(Point {
-            x: 0,
-            y: 0,
-            steps: std::u32::MAX, // steps are not considered part of the identity, so value is irrelevant
-        }),
-    );
+    let origin = Point::default();
 
-    for p in intersection.iter() {
-        dbg!(p);
+    let mut intersections: HashSet<Point> = HashSet::new();
+
+    let w1 = &input[0];
+    let w2 = &input[1];
+
+    for p1 in w1 {
+        if w2.contains(p1) {
+            let p2 = w2.get(p1).unwrap();
+            let intersection = Point {
+                x: p1.x,
+                y: p1.y,
+                steps: p1.steps + p2.steps,
+            };
+            intersections.insert(intersection);
+        }
     }
 
-    let p = intersection.iter().map(|p| p.dist()).min();
-    println!("part 1: {}", p.unwrap());
+    let _ = intersections.remove(&origin);
+
+    let part2 = intersections.iter().map(|p| p.steps).min();
+    println!("part 2: {}", part2.unwrap());
 }
